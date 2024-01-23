@@ -1,4 +1,4 @@
-package com.viikko1;
+package com.server;
 
 import java.io.*;
 import java.net.HttpURLConnection;
