@@ -62,10 +62,10 @@ public class Server implements HttpHandler {
         }
     }
 
-    private static SSLContext myServerSSLContext() throws Exception{
-        char[] passphrase = "verisiikret".toCharArray();
+    private static SSLContext myServerSSLContext(String[] args) throws Exception{
+        char[] passphrase = args[1].toCharArray();
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream("keystore.jks"), passphrase);
+        ks.load(new FileInputStream(args[0]), passphrase);
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -93,7 +93,7 @@ public class Server implements HttpHandler {
     public static void main(String[] args) throws Exception {
         try{
         HttpsServer server = HttpsServer.create(new InetSocketAddress(8001),0);
-        SSLContext sslContext = myServerSSLContext();
+        SSLContext sslContext = myServerSSLContext(args);
         server.setHttpsConfigurator (new HttpsConfigurator(sslContext) {
             public void configure (HttpsParameters params) {
                 InetSocketAddress remote = params.getClientAddress();
