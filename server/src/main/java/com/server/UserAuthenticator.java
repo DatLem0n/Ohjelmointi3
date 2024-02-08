@@ -25,7 +25,6 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     public UserAuthenticator(String realm) {
         super(realm);
         users = new Hashtable<String, User>();
-        users.put("johndoe", new User("johndoe", "password", "user.email@for-contacting.com"));
     }
 
     /**
@@ -49,7 +48,6 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     public UserAuthenticator(String realm, Charset charset) {
         super(realm);
         users = new Hashtable<String, User>();
-        users.put("johndoe", new User("johndoe", "password", "user.email@for-contacting.com"));
     }
 
     /**

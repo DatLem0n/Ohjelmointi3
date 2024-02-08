@@ -37,5 +37,13 @@ public class UserMessage {
         this.locationCity = locationCity;
     }
 
+    public JSONObject toJSONObject(){
+        JSONObject json = new JSONObject();
+        json.put("locationName", locationName);
+        json.put("locationDescription", locationDescription);
+        json.put("locationCity", locationCity);
+        return json;
+    }
+
 
 }

@@ -60,8 +60,11 @@ public class Server implements HttpHandler {
     private void handleGET(HttpExchange exchange) throws  IOException{
         JSONArray jsonArray = new JSONArray();
 
+        if (messages.isEmpty()){
+            exchange.sendResponseHeaders(HttpURLConnection.HTTP_NO_CONTENT, -1);
+        }
         for (UserMessage message : messages) {
-            jsonArray.put(message);
+            jsonArray.put(message.toJSONObject());
         }
         byte[] bytes = jsonArray.toString().getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, bytes.length);
@@ -71,9 +74,16 @@ public class Server implements HttpHandler {
     }
 
     private static SSLContext myServerSSLContext(String[] args) throws Exception{
-        char[] passphrase = args[1].toCharArray();
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(args[0]), passphrase);
+        //  pipeline
+        //char[] passphrase = args[1].toCharArray();
+        //ks.load(new FileInputStream(args[0]), passphrase);
+
+        //  local test
+        char[] passphrase = "verisiikret".toCharArray();
+        ks.load(new FileInputStream("C:/Users/Ville/keystore.jks"), passphrase);
+
+
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);

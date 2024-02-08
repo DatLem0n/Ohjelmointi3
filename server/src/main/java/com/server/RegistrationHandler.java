@@ -2,6 +2,7 @@ package com.server;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -41,12 +42,17 @@ public class RegistrationHandler implements HttpHandler {
             body.close();
             JSONObject json = new JSONObject(bodyText);
             if (json.length() != 3) {
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
+            }
+            try{
+                if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"))) {
+                    sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Username already taken");
+                }
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+            }catch (JSONException e){
                 sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             }
-            if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"))) {
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Username already taken");
-            }
-            exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+
     }
 
     private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
