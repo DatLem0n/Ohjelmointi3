@@ -5,24 +5,24 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import com.sun.net.httpserver.*;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
-
 public class Server implements HttpHandler {
 
-    private String[] requestMessages;
-    private final int MAX_MESSAGES = 100;
-    private int storedBodyAmount = 0;
-
+    private ArrayList<UserMessage> messages;
     private Server() {
-        requestMessages = new String[MAX_MESSAGES];
+        messages = new ArrayList<UserMessage>();
     }
 
     @Override
@@ -41,21 +41,29 @@ public class Server implements HttpHandler {
     private void handlePOST(HttpExchange exchange) throws  IOException{
         InputStream body = exchange.getRequestBody();
         String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-        requestMessages[storedBodyAmount++] = bodyText;
+        JSONObject json = new JSONObject(bodyText);
         body.close();
-        exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+        if (json.length() == 3){
+            try {
+                messages.add(new UserMessage(json.getString("locationName"), json.getString("locationDescription"), json.getString("locationCity")));
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+            }catch (JSONException e){
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+            }
+        }
+        else {
+            sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
+        }
+
     }
 
     private void handleGET(HttpExchange exchange) throws  IOException{
-        StringBuilder outputString = new StringBuilder();
+        JSONArray jsonArray = new JSONArray();
 
-        for (String request : requestMessages) {
-            if (request != null){
-                outputString.append(request);
-                outputString.append("\n");
-            }
+        for (UserMessage message : messages) {
+            jsonArray.put(message);
         }
-        byte[] bytes = outputString.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = jsonArray.toString().getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(bytes);

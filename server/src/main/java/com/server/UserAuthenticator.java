@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator{
 
-    private Map<String, String> users = null;
+    private final Map<String, User> users;
 
     /**
      * Creates a {@code BasicAuthenticator} for the given HTTP realm.
@@ -24,8 +24,8 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      */
     public UserAuthenticator(String realm) {
         super(realm);
-        users = new Hashtable<String,String>();
-        users.put("dummy", "passwd");
+        users = new Hashtable<String, User>();
+        users.put("johndoe", new User("johndoe", "password", "user.email@for-contacting.com"));
     }
 
     /**
@@ -47,9 +47,9 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      * string.
      */
     public UserAuthenticator(String realm, Charset charset) {
-        super(realm, charset);
-        users = new Hashtable<String,String>();
-        users.put("dummy", "passwd");
+        super(realm);
+        users = new Hashtable<String, User>();
+        users.put("johndoe", new User("johndoe", "password", "user.email@for-contacting.com"));
     }
 
     /**
@@ -65,15 +65,15 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     @Override
     public boolean checkCredentials(String username, String password) {
         if (users.containsKey(username)){
-            return users.get(username).equals(password);
+            return users.get(username).getPassword().equals(password);
         }
         return false;
     }
 
-    public boolean addUser(String userName, String password) {
-        if (users.containsKey(userName)) return false;
+    public boolean addUser(String username, String password, String email) {
+        if (users.containsKey(username)) return false;
 
-        users.put(userName,password);
+        users.put(username,new User(username, password, email));
         return true;
     }
 }

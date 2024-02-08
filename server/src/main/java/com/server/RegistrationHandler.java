@@ -2,6 +2,7 @@ package com.server;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -35,17 +36,17 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     private void handlePOST(HttpExchange exchange) throws IOException {
-        InputStream body = exchange.getRequestBody();
-        String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-        String[] splitBody = bodyText.split(":");
-        body.close();
-        if (splitBody.length != 2){
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect data");
-        }
-        if (!authenticator.addUser(splitBody[0], splitBody[1])){
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Username already taken");
-        }
-        exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+            InputStream body = exchange.getRequestBody();
+            String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+            body.close();
+            JSONObject json = new JSONObject(bodyText);
+            if (json.length() != 3) {
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+            }
+            if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"))) {
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Username already taken");
+            }
+            exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
     }
 
     private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
