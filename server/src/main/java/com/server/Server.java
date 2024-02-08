@@ -76,12 +76,12 @@ public class Server implements HttpHandler {
     private static SSLContext myServerSSLContext(String[] args) throws Exception{
         KeyStore ks = KeyStore.getInstance("JKS");
         //  pipeline
-        //char[] passphrase = args[1].toCharArray();
-        //ks.load(new FileInputStream(args[0]), passphrase);
+        char[] passphrase = args[1].toCharArray();
+        ks.load(new FileInputStream(args[0]), passphrase);
 
         //  local test
-        char[] passphrase = "verisiikret".toCharArray();
-        ks.load(new FileInputStream("C:/Users/Ville/keystore.jks"), passphrase);
+        //char[] passphrase = "verisiikret".toCharArray();
+        //ks.load(new FileInputStream("C:/Users/Ville/keystore.jks"), passphrase);
 
 
 
