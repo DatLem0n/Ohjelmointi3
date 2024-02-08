@@ -46,7 +46,7 @@ public class RegistrationHandler implements HttpHandler {
             }
             try{
                 if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"))) {
-                    sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Username already taken");
+                    sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Cannot add that user (username may be taken or data incorrect)");
                 }
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
             }catch (JSONException e){

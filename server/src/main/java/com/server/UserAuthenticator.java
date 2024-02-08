@@ -69,6 +69,7 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     }
 
     public boolean addUser(String username, String password, String email) {
+        if (username.isEmpty() || password.isEmpty() || email.isEmpty()) return false;
         if (users.containsKey(username)) return false;
 
         users.put(username,new User(username, password, email));
