@@ -13,17 +13,13 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class Server {
 
+    private static final MessageDatabase database = new MessageDatabase("jdbc:sqlite:", "msgDB");
+
+
     private static SSLContext myServerSSLContext(String[] args) throws Exception{
         KeyStore ks = KeyStore.getInstance("JKS");
-        //  pipeline
         char[] passphrase = args[1].toCharArray();
         ks.load(new FileInputStream(args[0]), passphrase);
-
-        //  local test
-        //char[] passphrase = "verisiikret".toCharArray();
-        //ks.load(new FileInputStream("C:/Users/Ville/keystore.jks"), passphrase);
-
-
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
@@ -51,14 +47,14 @@ public class Server {
         });
 
         UserAuthenticator authenticator = new UserAuthenticator("/info");
-        HttpContext infoContext = server.createContext("/info", new InfoHandler());
-        HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator));
+        HttpContext infoContext = server.createContext("/info", new InfoHandler(database));
+        HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
         infoContext.setAuthenticator(authenticator);
         server.setExecutor(null);
         server.start();
         } catch (FileNotFoundException e) {
                 System.out.println("Certificate not found");
-        e.printStackTrace();
+                e.printStackTrace();
         } catch (Exception e) {
                 e.printStackTrace();
         }

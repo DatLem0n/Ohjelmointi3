@@ -7,10 +7,13 @@ public class UserMessage {
     private String locationDescription;
     private String locationCity;
 
-    UserMessage(String locationName, String locationDescription, String locationCity){
+    private String originalPostingTime;
+
+    UserMessage(String locationName, String locationDescription, String locationCity, String originalPostingTime){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationDescription(locationDescription);
+        setOriginalPostingTime(originalPostingTime);
     }
 
     public String getLocationName() {
@@ -37,13 +40,26 @@ public class UserMessage {
         this.locationCity = locationCity;
     }
 
+    public String getOriginalPostingTime() {
+        return originalPostingTime;
+    }
+
+    public void setOriginalPostingTime(String originalPostingTime) {
+        this.originalPostingTime = originalPostingTime;
+    }
+
+    // checks if originalPostingTime is in correct format
+
+
     public JSONObject toJSONObject(){
         JSONObject json = new JSONObject();
         json.put("locationName", locationName);
         json.put("locationDescription", locationDescription);
         json.put("locationCity", locationCity);
+        json.put("originalPostingTime", originalPostingTime);
         return json;
     }
+
 
 
 }

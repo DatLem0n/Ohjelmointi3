@@ -12,9 +12,11 @@ import java.util.stream.Collectors;
 
 public class RegistrationHandler implements HttpHandler {
 
-    UserAuthenticator authenticator = null;
-    RegistrationHandler(UserAuthenticator authenticator){
+    UserAuthenticator authenticator;
+    MessageDatabase database;
+    RegistrationHandler(UserAuthenticator authenticator, MessageDatabase database){
         this.authenticator = authenticator;
+        this.database = database;
     }
     /**
      * Handle the given request and generate an appropriate response.
