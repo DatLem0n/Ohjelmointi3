@@ -2,18 +2,28 @@ package com.server;
 
 import org.json.JSONObject;
 
-public class UserMessage {
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class Message {
     private String locationName;
     private String locationDescription;
     private String locationCity;
 
     private String originalPostingTime;
 
-    UserMessage(String locationName, String locationDescription, String locationCity, String originalPostingTime){
+    Message(String locationName, String locationDescription, String locationCity, String originalPostingTime){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationDescription(locationDescription);
         setOriginalPostingTime(originalPostingTime);
+    }
+
+    Message(String locationName, String locationDescription, String locationCity, Long unixTime){
+        setLocationName(locationName);
+        setLocationCity(locationCity);
+        setLocationDescription(locationDescription);
+        setOriginalPostingTime(unixToDate(unixTime));
     }
 
     public String getLocationName() {
@@ -48,7 +58,27 @@ public class UserMessage {
         this.originalPostingTime = originalPostingTime;
     }
 
-    // checks if originalPostingTime is in correct format
+    public long dateToUnix(){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+        long unix = 0;
+        try {
+            LocalDateTime time = LocalDateTime.parse(originalPostingTime, formatter);
+            unix = time.toInstant(ZoneOffset.UTC).toEpochMilli();
+        }catch (DateTimeException e){
+            System.out.println("Error parsing date");
+            e.printStackTrace();
+        }catch (ArithmeticException e){
+            System.out.println("Why are we still using this >:(");
+            e.printStackTrace();
+        }
+        return unix;
+    }
+
+    private String unixToDate(Long unixTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneId.systemDefault());
+        Instant instant = Instant.ofEpochMilli(unixTime);
+        return formatter.format(instant);
+    }
 
 
     public JSONObject toJSONObject(){

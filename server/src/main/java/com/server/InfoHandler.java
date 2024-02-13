@@ -16,10 +16,8 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 public class InfoHandler implements HttpHandler {
-    private final ArrayList<UserMessage> messages;
-    private MessageDatabase database;
-    InfoHandler(MessageDatabase database) {
-        messages = new ArrayList<UserMessage>();
+    private MsgServerDatabase database;
+    InfoHandler(MsgServerDatabase database) {
         this.database = database;
     }
 
@@ -57,7 +55,7 @@ public class InfoHandler implements HttpHandler {
                     sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
                 }
                 else {
-                    messages.add(new UserMessage(json.getString("locationName"), json.getString("locationDescription"), json.getString("locationCity"), json.getString("originalPostingTime")));
+                    database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"), json.getString("locationCity"), json.getString("originalPostingTime")));
                     exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
                 }
 
@@ -81,11 +79,12 @@ public class InfoHandler implements HttpHandler {
 
     private void handleGET(HttpExchange exchange) throws  IOException{
         JSONArray jsonArray = new JSONArray();
+        ArrayList<Message> messages = database.getMessages();
 
         if (messages.isEmpty()){
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_NO_CONTENT, -1);
         }
-        for (UserMessage message : messages) {
+        for (Message message : messages) {
             jsonArray.put(message.toJSONObject());
         }
         byte[] bytes = jsonArray.toString().getBytes(StandardCharsets.UTF_8);

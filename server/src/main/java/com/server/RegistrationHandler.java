@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 public class RegistrationHandler implements HttpHandler {
 
     UserAuthenticator authenticator;
-    MessageDatabase database;
-    RegistrationHandler(UserAuthenticator authenticator, MessageDatabase database){
+    MsgServerDatabase database;
+    RegistrationHandler(UserAuthenticator authenticator, MsgServerDatabase database){
         this.authenticator = authenticator;
         this.database = database;
     }

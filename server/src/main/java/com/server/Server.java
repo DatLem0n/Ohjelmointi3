@@ -13,7 +13,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class Server {
 
-    private static final MessageDatabase database = new MessageDatabase("jdbc:sqlite:", "msgDB");
+    private static final MsgServerDatabase database = new MsgServerDatabase("jdbc:sqlite:", "msgDB");
 
 
     private static SSLContext myServerSSLContext(String[] args) throws Exception{
@@ -46,7 +46,7 @@ public class Server {
             }
         });
 
-        UserAuthenticator authenticator = new UserAuthenticator("/info");
+        UserAuthenticator authenticator = new UserAuthenticator("/info", database);
         HttpContext infoContext = server.createContext("/info", new InfoHandler(database));
         HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
         infoContext.setAuthenticator(authenticator);

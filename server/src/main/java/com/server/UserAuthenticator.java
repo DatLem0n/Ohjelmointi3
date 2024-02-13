@@ -1,12 +1,10 @@
 package com.server;
 
 import java.nio.charset.Charset;
-import java.util.Hashtable;
-import java.util.Map;
 
 public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator{
 
-    private final Map<String, User> users;
+    private final MsgServerDatabase userDB;
 
     /**
      * Creates a {@code BasicAuthenticator} for the given HTTP realm.
@@ -22,9 +20,9 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      * @apiNote The value of the {@code realm} parameter will be embedded in a
      * quoted string.
      */
-    public UserAuthenticator(String realm) {
+    public UserAuthenticator(String realm, MsgServerDatabase database) {
         super(realm);
-        users = new Hashtable<String, User>();
+        userDB = database;
     }
 
     /**
@@ -45,9 +43,9 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      * <p>The value of the {@code realm} parameter will be embedded in a quoted
      * string.
      */
-    public UserAuthenticator(String realm, Charset charset) {
+    public UserAuthenticator(String realm, Charset charset, MsgServerDatabase database) {
         super(realm);
-        users = new Hashtable<String, User>();
+        userDB = database;
     }
 
     /**
@@ -62,17 +60,16 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      */
     @Override
     public boolean checkCredentials(String username, String password) {
-        if (users.containsKey(username)){
-            return users.get(username).getPassword().equals(password);
+        if (userDB.containsUser(username)){
+            return userDB.getUser(username).getPassword().equals(password.hashCode());
         }
         return false;
     }
 
     public boolean addUser(String username, String password, String email) {
         if (username.isEmpty() || password.isEmpty() || email.isEmpty()) return false;
-        if (users.containsKey(username)) return false;
-
-        users.put(username,new User(username, password, email));
+        if (userDB.containsUser(username)) return false;
+        userDB.addUser(new User(username, password, email));
         return true;
     }
 }

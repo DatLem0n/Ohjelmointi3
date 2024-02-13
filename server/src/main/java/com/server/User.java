@@ -2,12 +2,21 @@ package com.server;
 
 public class User {
     private String username;
-    private String password;
+    private Integer password;
     private String email;
 
     User(String username, String password, String email){
         setUsername(username);
         setPassword(password);
+        setEmail(email);
+    }
+
+    /**
+     * only to be used with already hashed passwords
+     */
+    User(String username, Integer password, String email){
+        setUsername(username);
+        this.password = password;
         setEmail(email);
     }
     public String getUsername() {
@@ -18,12 +27,12 @@ public class User {
         this.username = username;
     }
 
-    public String getPassword() {
+    public Integer getPassword() {
         return password;
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.password = password.hashCode();
     }
 
     public String getEmail() {
