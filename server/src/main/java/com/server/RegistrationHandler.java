@@ -48,7 +48,7 @@ public class RegistrationHandler implements HttpHandler {
             String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
             body.close();
             JSONObject json = new JSONObject(bodyText);
-            if (json.length() != 3) {
+            if (json.length() != 4) {
                 sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
             }
             try{
