@@ -56,7 +56,7 @@ public class InfoHandler implements HttpHandler {
         body.close();
         User sender = database.getUser(exchange.getPrincipal().getUsername());
         int jsonLength = json.length();
-        if (jsonLength != 5 && jsonLength != 7) {
+        if (jsonLength != 6 && jsonLength != 8) {
             sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
         Float latitude = null, longitude = null;
