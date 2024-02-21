@@ -61,15 +61,23 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     @Override
     public boolean checkCredentials(String username, String password) {
         if (userDB.containsUser(username)){
-            return userDB.getUser(username).getPassword().equals(password.hashCode());
+            return userDB.checkPassword(username, password);
         }
         return false;
     }
 
-    public boolean addUser(String username, String password, String email) {
+    /**
+     * adds user to database
+     * @param username
+     * @param password
+     * @param email
+     * @param nickname
+     * @return
+     */
+    public boolean addUser(String username, String password, String email, String nickname) {
         if (username.isEmpty() || password.isEmpty() || email.isEmpty()) return false;
         if (userDB.containsUser(username)) return false;
-        userDB.addUser(new User(username, password, email));
+        userDB.addUser(new User(username, password, email, nickname));
         return true;
     }
 }

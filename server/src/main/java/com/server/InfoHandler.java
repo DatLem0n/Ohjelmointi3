@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 public class InfoHandler implements HttpHandler {
-    private MsgServerDatabase database;
+    private final MsgServerDatabase database;
     InfoHandler(MsgServerDatabase database) {
         this.database = database;
     }
@@ -44,31 +44,53 @@ public class InfoHandler implements HttpHandler {
 
     }
 
+    /**
+     * handles POST requests by parsing json data and adding messages to the database if data is correct
+     * @param exchange
+     * @throws IOException
+     */
     private void handlePOST(HttpExchange exchange) throws  IOException{
         InputStream body = exchange.getRequestBody();
         String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         JSONObject json = new JSONObject(bodyText);
         body.close();
-        if (json.length() == 4){
-            try {
-                if (!validTimestamp(json.getString("originalPostingTime"))){
-                    sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
-                }
-                else {
-                    database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"), json.getString("locationCity"), json.getString("originalPostingTime")));
-                    exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
-                }
-
-            }catch (JSONException e){
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
-            }
-        }
-        else {
+        User sender = database.getUser(exchange.getPrincipal().getUsername());
+        int jsonLength = json.length();
+        if (jsonLength != 5 && jsonLength != 7) {
             sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
+        Float latitude = null, longitude = null;
+
+
+        try {
+            if (!validTimestamp(json.getString("originalPostingTime"))){
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
+            }
+            else {
+                if (jsonLength == 8) {
+                    latitude = json.getFloat("latitude");
+                    longitude = json.getFloat("longitude");
+                }
+                database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
+                        json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
+                        json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+            }
+
+        }catch (JSONException e){
+            sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+        }
+
 
     }
 
+    /**
+     * used to send error messages back to the user
+     * @param exchange
+     * @param errorType HTTP code
+     * @param message
+     * @throws IOException
+     */
     private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(errorType, bytes.length);
@@ -77,6 +99,11 @@ public class InfoHandler implements HttpHandler {
         }
     }
 
+    /**
+     * handles GET requests by forming a JSONArray from messages and sending it to the user
+     * @param exchange
+     * @throws IOException
+     */
     private void handleGET(HttpExchange exchange) throws  IOException{
         JSONArray jsonArray = new JSONArray();
         ArrayList<Message> messages = database.getMessages();
@@ -94,6 +121,11 @@ public class InfoHandler implements HttpHandler {
         }
     }
 
+    /**
+     * checks if postingTime is in correct format
+     * @param originalPostingTime
+     * @return
+     */
     public boolean validTimestamp(String originalPostingTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 

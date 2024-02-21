@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -12,8 +14,8 @@ import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
+import org.apache.commons.codec.digest.Crypt;
 import static org.jooq.impl.DSL.*;
-
 
 public class MsgServerDatabase {
     private final String database;
@@ -36,9 +38,10 @@ public class MsgServerDatabase {
      * @throws SQLException
      */
     public void open() throws SQLException{
-        boolean dbExists = new File(database).exists();
+        boolean dbExists = new File(database.substring(12)).exists();
         if (dbExists){
             dbConnection = DriverManager.getConnection(database);
+            System.out.println("successfully connected to existing database");
         }else {
             createDB();
         }
@@ -68,8 +71,10 @@ public class MsgServerDatabase {
         if (dbConnection != null){
             jooq.createTableIfNotExists("users")
                     .column("username", SQLDataType.VARCHAR(255).nullable(false))
-                    .column("password", SQLDataType.INTEGER.nullable(false))
+                    .column("password", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("salt", SQLDataType.VARCHAR(255).nullable(false))
                     .column("email", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("userNickname", SQLDataType.VARCHAR(255).nullable(false))
                     .constraints(
                             constraint().primaryKey("username")
                     )
@@ -79,7 +84,11 @@ public class MsgServerDatabase {
                     .column("locationName", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationDescription", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationCity", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("locationCountry", SQLDataType.VARCHAR(255).nullable(false))
                     .column("originalPostingTime", SQLDataType.BIGINT.nullable(false))
+                    .column("originalPoster", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("latitude",SQLDataType.FLOAT.nullable(true))
+                    .column("longitude",SQLDataType.FLOAT.nullable(true))
                     .constraints(
                             constraint().primaryKey("locationName")
                     )
@@ -93,8 +102,11 @@ public class MsgServerDatabase {
      * @param message
      */
     public void addMessage(Message message){
-        jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"), field("originalPostingTime"))
-                .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.dateToUnix())
+        jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
+                        field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
+                        field("latitude"), field("longitude"))
+                .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.getLocationCountry(),
+                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude())
                 .execute();
     }
 
@@ -103,11 +115,51 @@ public class MsgServerDatabase {
      * @param user
      */
     public void addUser(User user){
-        jooq.insertInto(table("users"), field("username"), field("password"),field("email"))
-                .values(user.getUsername(), user.getPassword(), user.getEmail())
+        String salt = generateSalt();
+        String hashedPassword = Crypt.crypt(user.getPassword(), salt);
+
+        jooq.insertInto(table("users"), field("username"), field("password"),field("salt"),field("email"), field("userNickname"))
+                .values(user.getUsername(), hashedPassword,salt, user.getEmail(), user.getNickname())
                 .execute();
     }
 
+    /**
+     * generates salt to use in password hashing
+     * @return
+     */
+    private String generateSalt(){
+        byte[] bytes = new byte[13];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(bytes);
+        String saltBytes = new String(Base64.getEncoder().encode(bytes));
+        return "$6$" + saltBytes;
+    }
+
+    /**
+     * checks if password is valid for username
+     * @param username
+     * @param password plaintext password
+     * @return
+     */
+    public boolean checkPassword(String username, String password){
+        String hashedPassword, salt;
+        Record record = jooq.select()
+                .from(table("users"))
+                .where(field("username").eq(username))
+                .fetchAny();
+        if (record == null) {
+            throw new IllegalStateException("User not found");
+        }
+        hashedPassword = record.get("password", String.class);
+        salt = record.get("salt",String.class);
+        return Crypt.crypt(password, salt).equals(hashedPassword);
+    }
+
+    /**
+     * checks if user is in database
+     * @param username
+     * @return
+     */
     public boolean containsUser(String username){
         Record record = jooq.select()
                 .from(table("users"))
@@ -116,20 +168,30 @@ public class MsgServerDatabase {
         return record != null;
     }
 
+    /**
+     * finds user from database and returns it.
+     * @param username
+     * @return
+     */
     public User getUser(String username) {
         Record record = jooq.select()
                 .from(table("users"))
                 .where(field("username").eq(username))
                 .fetchAny();
         if (record != null) {
-            Integer password = record.get(field("password", Integer.class));
+            String password = record.get(field("password", String.class));
             String email = record.get(field("email", String.class));
+            String nickname = record.get(field("userNickname", String.class));
 
-            return new User(username, password, email);
+            return new User(username, password, email, nickname);
         }
         return null;
     }
 
+    /**
+     * returns all messages in database as an arraylist
+     * @return
+     */
     public ArrayList<Message> getMessages(){
         ArrayList<Message> messages = new ArrayList<Message>();
 
@@ -141,9 +203,15 @@ public class MsgServerDatabase {
             String locationName = record.get(field("locationName", String.class));
             String locationDescription = record.get("locationDescription", String.class);
             String locationCity = record.get("locationCity", String.class);
+            String locationCountry = record.get("locationCountry", String.class);
+            String locationStreetAddress = record.get("locationStreetAddress", String.class);
             Long unixTime = record.get("originalPostingTime", Long.class);
+            String nickname = record.get("userNickname", String.class);
+            Float latitude = record.get("latitude", Float.class);
+            Float longitude = record.get("longitude", Float.class);
 
-            Message message = new Message(locationName, locationDescription, locationCity, unixTime);
+
+            Message message = new Message(locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude);
 
             messages.add(message);
         }

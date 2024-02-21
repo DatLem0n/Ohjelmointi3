@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 
 public class RegistrationHandler implements HttpHandler {
 
-    UserAuthenticator authenticator;
-    MsgServerDatabase database;
+    private final UserAuthenticator authenticator;
+    private final MsgServerDatabase database;
     RegistrationHandler(UserAuthenticator authenticator, MsgServerDatabase database){
         this.authenticator = authenticator;
         this.database = database;
@@ -38,6 +38,11 @@ public class RegistrationHandler implements HttpHandler {
         }
     }
 
+    /**
+     * handles POST requests by adding user to database if information is correct and username is not taken
+     * @param exchange
+     * @throws IOException
+     */
     private void handlePOST(HttpExchange exchange) throws IOException {
             InputStream body = exchange.getRequestBody();
             String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
@@ -47,7 +52,7 @@ public class RegistrationHandler implements HttpHandler {
                 sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
             }
             try{
-                if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"))) {
+                if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"), json.getString("userNickname"))) {
                     sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Cannot add that user (username may be taken or data incorrect)");
                 }
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
@@ -57,6 +62,13 @@ public class RegistrationHandler implements HttpHandler {
 
     }
 
+    /**
+     * used to send error messages back to the user
+     * @param exchange
+     * @param errorType HTTP code
+     * @param message
+     * @throws IOException
+     */
     private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(errorType, bytes.length);
