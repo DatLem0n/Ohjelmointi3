@@ -2,6 +2,7 @@ package com.server;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.jooq.exception.DataAccessException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,6 +10,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -54,34 +56,37 @@ public class InfoHandler implements HttpHandler {
         String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         JSONObject json = new JSONObject(bodyText);
         body.close();
-        User sender = database.getUser(exchange.getPrincipal().getUsername());
+
+        User sender;
         int jsonLength = json.length();
         if (jsonLength != 6 && jsonLength != 8) {
             sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
-        Float latitude = null, longitude = null;
+        Double latitude = null, longitude = null;
 
 
         try {
+            sender = database.getUser(exchange.getPrincipal().getUsername());
             if (!validTimestamp(json.getString("originalPostingTime"))){
                 sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
             }
             else {
                 if (jsonLength == 8) {
-                    latitude = json.getFloat("latitude");
-                    longitude = json.getFloat("longitude");
+                    latitude = json.getDouble("latitude");
+                    longitude = json.getDouble("longitude");
                 }
                 database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
                         json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
                         json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
+                System.out.println("success");
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+
             }
 
-        }catch (JSONException e){
+        }catch (JSONException | DataAccessException | SQLException e){
             sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+            e.printStackTrace();
         }
-
-
     }
 
     /**
@@ -106,7 +111,15 @@ public class InfoHandler implements HttpHandler {
      */
     private void handleGET(HttpExchange exchange) throws  IOException{
         JSONArray jsonArray = new JSONArray();
-        ArrayList<Message> messages = database.getMessages();
+        ArrayList<Message> messages = new ArrayList<>();
+        try {
+            messages = database.getMessages();
+        }
+        catch (DataAccessException e){
+            sendErrorMsg(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "Error while getting messages");
+            e.printStackTrace();
+        }
+
 
         if (messages.isEmpty()){
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_NO_CONTENT, -1);

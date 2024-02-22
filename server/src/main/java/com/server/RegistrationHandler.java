@@ -49,7 +49,7 @@ public class RegistrationHandler implements HttpHandler {
             body.close();
             JSONObject json = new JSONObject(bodyText);
             if (json.length() != 4) {
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_ENTITY_TOO_LARGE, "Incorrect JSON length");
             }
             try{
                 if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"), json.getString("userNickname"))) {

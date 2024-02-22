@@ -1,6 +1,9 @@
 package com.server;
 
+import org.jooq.exception.DataAccessException;
+
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 
 public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator{
 
@@ -60,8 +63,12 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      */
     @Override
     public boolean checkCredentials(String username, String password) {
-        if (userDB.containsUser(username)){
-            return userDB.checkPassword(username, password);
+        try {
+            if (userDB.containsUser(username)){
+                return userDB.checkPassword(username, password);
+            }
+        }catch (DataAccessException e){
+            System.out.println("SQL error while checking credentials");
         }
         return false;
     }
@@ -75,9 +82,14 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
      * @return
      */
     public boolean addUser(String username, String password, String email, String nickname) {
-        if (username.isEmpty() || password.isEmpty() || email.isEmpty()) return false;
-        if (userDB.containsUser(username)) return false;
-        userDB.addUser(new User(username, password, email, nickname));
-        return true;
+        try{
+            if (username.isEmpty() || password.isEmpty() || email.isEmpty()) return false;
+            if (userDB.containsUser(username)) return false;
+            userDB.addUser(new User(username, password, email, nickname));
+            return true;
+        }catch (DataAccessException | SQLException e){
+            System.out.println("SQLError while adding user");
+            return false;
+        }
     }
 }

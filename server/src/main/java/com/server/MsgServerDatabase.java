@@ -12,6 +12,7 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.apache.commons.codec.digest.Crypt;
@@ -37,10 +38,11 @@ public class MsgServerDatabase {
      * opens DB connection, creates new DB if given DB does not exist.
      * @throws SQLException
      */
-    public void open() throws SQLException{
+    public void open() throws SQLException, DataAccessException{
         boolean dbExists = new File(database.substring(12)).exists();
         if (dbExists){
             dbConnection = DriverManager.getConnection(database);
+            jooq = DSL.using(dbConnection, SQLDialect.SQLITE);
             System.out.println("successfully connected to existing database");
         }else {
             createDB();
@@ -51,7 +53,7 @@ public class MsgServerDatabase {
      * closes DB connection
      * @throws SQLException
      */
-    public void close() throws SQLException{
+    public void close() throws SQLException, DataAccessException{
         if (dbConnection  != null){
             System.out.println("closing DB connection");
             dbConnection.close();
@@ -63,7 +65,7 @@ public class MsgServerDatabase {
      * creates DB and connects to it
      * @throws SQLException
      */
-    private void createDB () throws SQLException {
+    private void createDB () throws DataAccessException, SQLException {
         dbConnection = DriverManager.getConnection(database);
         jooq = DSL.using(dbConnection, SQLDialect.SQLITE);
         System.out.println("creating DB");
@@ -85,10 +87,11 @@ public class MsgServerDatabase {
                     .column("locationDescription", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationCity", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationCountry", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("locationStreetAddress",SQLDataType.VARCHAR(255).nullable(false))
                     .column("originalPostingTime", SQLDataType.BIGINT.nullable(false))
                     .column("originalPoster", SQLDataType.VARCHAR(255).nullable(false))
-                    .column("latitude",SQLDataType.FLOAT.nullable(true))
-                    .column("longitude",SQLDataType.FLOAT.nullable(true))
+                    .column("latitude",SQLDataType.DOUBLE.nullable(true))
+                    .column("longitude",SQLDataType.DOUBLE.nullable(true))
                     .constraints(
                             constraint().primaryKey("locationName")
                     )
@@ -101,7 +104,7 @@ public class MsgServerDatabase {
      * adds message data to the database
      * @param message
      */
-    public void addMessage(Message message){
+    public void addMessage(Message message) throws DataAccessException, SQLException {
         jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
                         field("latitude"), field("longitude"))
@@ -114,7 +117,7 @@ public class MsgServerDatabase {
      * adds user data to the database
      * @param user
      */
-    public void addUser(User user){
+    public void addUser(User user) throws DataAccessException, SQLException{
         String salt = generateSalt();
         String hashedPassword = Crypt.crypt(user.getPassword(), salt);
 
@@ -141,7 +144,7 @@ public class MsgServerDatabase {
      * @param password plaintext password
      * @return
      */
-    public boolean checkPassword(String username, String password){
+    public boolean checkPassword(String username, String password) throws DataAccessException{
         String hashedPassword, salt;
         Record record = jooq.select()
                 .from(table("users"))
@@ -160,7 +163,7 @@ public class MsgServerDatabase {
      * @param username
      * @return
      */
-    public boolean containsUser(String username){
+    public boolean containsUser(String username) throws DataAccessException{
         Record record = jooq.select()
                 .from(table("users"))
                 .where(field("username").eq(username))
@@ -173,7 +176,7 @@ public class MsgServerDatabase {
      * @param username
      * @return
      */
-    public User getUser(String username) {
+    public User getUser(String username) throws DataAccessException {
         Record record = jooq.select()
                 .from(table("users"))
                 .where(field("username").eq(username))
@@ -192,7 +195,7 @@ public class MsgServerDatabase {
      * returns all messages in database as an arraylist
      * @return
      */
-    public ArrayList<Message> getMessages(){
+    public ArrayList<Message> getMessages() throws DataAccessException{
         ArrayList<Message> messages = new ArrayList<Message>();
 
         Result<Record> result = jooq.select()
@@ -207,8 +210,8 @@ public class MsgServerDatabase {
             String locationStreetAddress = record.get("locationStreetAddress", String.class);
             Long unixTime = record.get("originalPostingTime", Long.class);
             String nickname = record.get("userNickname", String.class);
-            Float latitude = record.get("latitude", Float.class);
-            Float longitude = record.get("longitude", Float.class);
+            Double latitude = record.get("latitude", Double.class);
+            Double longitude = record.get("longitude", Double.class);
 
 
             Message message = new Message(locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude);

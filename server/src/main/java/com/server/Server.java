@@ -3,6 +3,7 @@ package com.server;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.util.concurrent.Executors;
 
 import com.sun.net.httpserver.*;
 
@@ -51,6 +52,7 @@ public class Server {
         HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
         infoContext.setAuthenticator(authenticator);
         server.setExecutor(null);
+        //server.setExecutor(Executors.newCachedThreadPool());
         server.start();
         } catch (FileNotFoundException e) {
                 System.out.println("Certificate not found");

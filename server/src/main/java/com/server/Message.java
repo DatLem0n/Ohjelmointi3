@@ -13,10 +13,10 @@ public class Message {
     private String locationStreetAddress;
     private String originalPoster;
     private String originalPostingTime;
-    private Float latitude;
-    private Float longitude;
+    private Double latitude;
+    private Double longitude;
 
-    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, String originalPostingTime, String originalPoster, Float latitude, Float longitude){
+    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, String originalPostingTime, String originalPoster, Double latitude, Double longitude){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -24,14 +24,11 @@ public class Message {
         setLocationDescription(locationDescription);
         setOriginalPostingTime(originalPostingTime);
         setOriginalPoster(originalPoster);
-        if (latitude != null){
-            setLatitude(latitude);
-            setLongitude(longitude);
-        }
-
+        setLatitude(latitude);
+        setLongitude(longitude);
     }
 
-    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Float latitude, Float longitude){
+    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -39,10 +36,9 @@ public class Message {
         setLocationDescription(locationDescription);
         setOriginalPostingTime(unixToDate(unixTime));
         setOriginalPoster(originalPoster);
-        if (latitude != null){
-            setLatitude(latitude);
-            setLongitude(longitude);
-        }
+        setLatitude(latitude);
+        setLongitude(longitude);
+
     }
 
     public String getLocationName() {
@@ -100,19 +96,19 @@ public class Message {
         this.originalPoster = originalPoster;
     }
 
-    public Float getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(Float latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public Float getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(Float longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 
