@@ -38,7 +38,7 @@ public class MsgServerDatabase {
      * opens DB connection, creates new DB if given DB does not exist.
      * @throws SQLException
      */
-    public void open() throws SQLException, DataAccessException{
+    public synchronized void open() throws SQLException, DataAccessException{
         boolean dbExists = new File(database.substring(12)).exists();
         if (dbExists){
             dbConnection = DriverManager.getConnection(database);
