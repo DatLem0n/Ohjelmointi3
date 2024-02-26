@@ -4,13 +4,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.jooq.exception.DataAccessException;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +39,7 @@ public class InfoHandler implements HttpHandler {
         } else if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
             handleGET(exchange);
         } else {
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
+            sendResponse(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
         }
 
     }
@@ -57,18 +55,18 @@ public class InfoHandler implements HttpHandler {
         JSONObject json = new JSONObject(bodyText);
         body.close();
 
-        User sender;
         int jsonLength = json.length();
         if (jsonLength != 6 && jsonLength != 8) {
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
+            sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
+        User sender;
         Double latitude = null, longitude = null;
 
 
         try {
             sender = database.getUser(exchange.getPrincipal().getUsername());
             if (!validTimestamp(json.getString("originalPostingTime"))){
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
+                sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
             }
             else {
                 if (jsonLength == 8) {
@@ -78,27 +76,28 @@ public class InfoHandler implements HttpHandler {
                 database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
                         json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
                         json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
+
                 System.out.println("success");
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_OK, "success");
+                sendResponse(exchange, HttpURLConnection.HTTP_OK, "success");
             }
 
         }catch (Throwable e){
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+            sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             e.printStackTrace();
         }
         finally {
-            exchange.close();
+            //exchange.close();
         }
     }
 
     /**
-     * used to send error messages back to the user
+     * used to send messages back to the user
      * @param exchange
      * @param errorType HTTP code
      * @param message
      * @throws IOException
      */
-    private synchronized void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
+    private synchronized void sendResponse(HttpExchange exchange, int errorType, String message) throws IOException{
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(errorType, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
@@ -112,13 +111,14 @@ public class InfoHandler implements HttpHandler {
      * @throws IOException
      */
     private void handleGET(HttpExchange exchange) throws  IOException{
+        System.out.println("handling GET");
         JSONArray jsonArray = new JSONArray();
         ArrayList<Message> messages = new ArrayList<>();
         try {
             messages = database.getMessages();
         }
-        catch (DataAccessException e){
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "Error while getting messages");
+        catch (DataAccessException | IllegalArgumentException e){
+            sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "Error while getting messages");
             e.printStackTrace();
         }
 
@@ -133,6 +133,9 @@ public class InfoHandler implements HttpHandler {
         exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(bytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "error writing messages");
         }
     }
 

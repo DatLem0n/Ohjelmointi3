@@ -34,7 +34,7 @@ public class RegistrationHandler implements HttpHandler {
             handlePOST(exchange);
         }
         else {
-            sendErrorMsg(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
+            sendResponse(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
         }
     }
 
@@ -49,15 +49,15 @@ public class RegistrationHandler implements HttpHandler {
             body.close();
             JSONObject json = new JSONObject(bodyText);
             if (json.length() != 4) {
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_ENTITY_TOO_LARGE, "Incorrect JSON length");
+                sendResponse(exchange, HttpURLConnection.HTTP_ENTITY_TOO_LARGE, "Incorrect JSON length");
             }
             try{
                 if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"), json.getString("userNickname"))) {
-                    sendErrorMsg(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Cannot add that user (username may be taken or data incorrect)");
+                    sendResponse(exchange, HttpURLConnection.HTTP_FORBIDDEN, "Cannot add that user (username may be taken or data incorrect)");
                 }
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
             }catch (JSONException e){
-                sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+                sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             }
 
     }
@@ -69,7 +69,7 @@ public class RegistrationHandler implements HttpHandler {
      * @param message
      * @throws IOException
      */
-    private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
+    private void sendResponse(HttpExchange exchange, int errorType, String message) throws IOException{
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(errorType, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {

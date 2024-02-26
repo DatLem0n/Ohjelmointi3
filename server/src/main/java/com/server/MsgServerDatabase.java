@@ -83,6 +83,7 @@ public class MsgServerDatabase {
                     .execute();
 
             jooq.createTableIfNotExists("messages")
+                    .column("id", SQLDataType.INTEGER.identity(true))
                     .column("locationName", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationDescription", SQLDataType.VARCHAR(255).nullable(false))
                     .column("locationCity", SQLDataType.VARCHAR(255).nullable(false))
@@ -93,7 +94,7 @@ public class MsgServerDatabase {
                     .column("latitude",SQLDataType.DOUBLE.nullable(true))
                     .column("longitude",SQLDataType.DOUBLE.nullable(true))
                     .constraints(
-                            constraint().primaryKey("locationName")
+                            constraint().primaryKey("id")
                     )
                     .execute();
             System.out.println("DB creation successful");
@@ -209,7 +210,7 @@ public class MsgServerDatabase {
             String locationCountry = record.get("locationCountry", String.class);
             String locationStreetAddress = record.get("locationStreetAddress", String.class);
             Long unixTime = record.get("originalPostingTime", Long.class);
-            String nickname = record.get("userNickname", String.class);
+            String nickname = record.get("originalPoster", String.class);
             Double latitude = record.get("latitude", Double.class);
             Double longitude = record.get("longitude", Double.class);
 
