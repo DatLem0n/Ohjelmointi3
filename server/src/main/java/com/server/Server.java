@@ -51,8 +51,7 @@ public class Server {
         HttpContext infoContext = server.createContext("/info", new InfoHandler(database));
         HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
         infoContext.setAuthenticator(authenticator);
-        server.setExecutor(null);
-        //server.setExecutor(Executors.newCachedThreadPool());
+        server.setExecutor(Executors.newCachedThreadPool());
         server.start();
         } catch (FileNotFoundException e) {
                 System.out.println("Certificate not found");

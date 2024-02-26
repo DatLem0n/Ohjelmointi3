@@ -163,7 +163,7 @@ public class MsgServerDatabase {
      * @param username
      * @return
      */
-    public boolean containsUser(String username) throws DataAccessException{
+    public synchronized boolean containsUser(String username) throws DataAccessException{
         Record record = jooq.select()
                 .from(table("users"))
                 .where(field("username").eq(username))

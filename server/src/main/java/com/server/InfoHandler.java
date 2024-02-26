@@ -79,13 +79,15 @@ public class InfoHandler implements HttpHandler {
                         json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
                         json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
                 System.out.println("success");
-                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
-
+                sendErrorMsg(exchange, HttpURLConnection.HTTP_OK, "success");
             }
 
-        }catch (JSONException | DataAccessException | SQLException e){
+        }catch (Throwable e){
             sendErrorMsg(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             e.printStackTrace();
+        }
+        finally {
+            exchange.close();
         }
     }
 
@@ -96,7 +98,7 @@ public class InfoHandler implements HttpHandler {
      * @param message
      * @throws IOException
      */
-    private void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
+    private synchronized void sendErrorMsg(HttpExchange exchange, int errorType, String message) throws IOException{
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(errorType, bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
