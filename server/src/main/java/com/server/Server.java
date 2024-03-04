@@ -47,10 +47,13 @@ public class Server {
             }
         });
 
-        UserAuthenticator authenticator = new UserAuthenticator("/info", database);
+        UserAuthenticator infoAuthenticator = new UserAuthenticator("/info", database);
+        UserAuthenticator pathsAuthenticator = infoAuthenticator;
         HttpContext infoContext = server.createContext("/info", new InfoHandler(database));
-        HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
-        infoContext.setAuthenticator(authenticator);
+        HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(infoAuthenticator, database));
+        HttpContext pathsContext = server.createContext("/paths", new PathsHandler(database));
+        infoContext.setAuthenticator(infoAuthenticator);
+        pathsContext.setAuthenticator(pathsAuthenticator);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
         } catch (FileNotFoundException e) {
