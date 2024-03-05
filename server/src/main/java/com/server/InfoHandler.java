@@ -39,7 +39,7 @@ public class InfoHandler implements HttpHandler {
         } else if (exchange.getRequestMethod().equalsIgnoreCase("GET")) {
             handleGET(exchange);
         } else {
-            sendResponse(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
         }
 
     }
@@ -57,7 +57,7 @@ public class InfoHandler implements HttpHandler {
 
         int jsonLength = json.length();
         if (jsonLength != 6 && jsonLength != 8) {
-            sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
         User sender;
         Double latitude = null, longitude = null;
@@ -66,7 +66,7 @@ public class InfoHandler implements HttpHandler {
         try {
             sender = database.getUser(exchange.getPrincipal().getUsername());
             if (!validTimestamp(json.getString("originalPostingTime"))){
-                sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
+                Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
             }
             else {
                 if (jsonLength == 8) {
@@ -78,32 +78,15 @@ public class InfoHandler implements HttpHandler {
                         json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
 
                 System.out.println("success");
-                sendResponse(exchange, HttpURLConnection.HTTP_OK, "success");
+                Server.sendResponse(exchange, HttpURLConnection.HTTP_OK, "success");
             }
 
         }catch (Throwable e){
-            sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             e.printStackTrace();
-        }
-        finally {
-            //exchange.close();
         }
     }
 
-    /**
-     * used to send messages back to the user
-     * @param exchange
-     * @param errorType HTTP code
-     * @param message
-     * @throws IOException
-     */
-    private synchronized void sendResponse(HttpExchange exchange, int errorType, String message) throws IOException{
-        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(errorType, bytes.length);
-        try (OutputStream output = exchange.getResponseBody()) {
-            output.write(bytes);
-        }
-    }
 
     /**
      * handles GET requests by forming a JSONArray from messages and sending it to the user
@@ -118,7 +101,7 @@ public class InfoHandler implements HttpHandler {
             messages = database.getMessages();
         }
         catch (DataAccessException | IllegalArgumentException e){
-            sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "Error while getting messages");
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "Error while getting messages");
             e.printStackTrace();
         }
 
@@ -135,7 +118,7 @@ public class InfoHandler implements HttpHandler {
             output.write(bytes);
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "error writing messages");
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_INTERNAL_ERROR, "error writing messages");
         }
     }
 

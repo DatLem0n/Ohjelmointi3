@@ -2,6 +2,7 @@ package com.server;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.concurrent.Executors;
 
@@ -15,6 +16,21 @@ import javax.net.ssl.TrustManagerFactory;
 public class Server {
 
     private static final MsgServerDatabase database = new MsgServerDatabase("jdbc:sqlite:", "msgDB");
+
+    /**
+     * used to send messages back to the user
+     * @param exchange
+     * @param errorType HTTP code
+     * @param message
+     * @throws IOException
+     */
+    public static void sendResponse(HttpExchange exchange, int errorType, String message) throws IOException{
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(errorType, bytes.length);
+        try (OutputStream output = exchange.getResponseBody()) {
+            output.write(bytes);
+        }
+    }
 
 
     private static SSLContext myServerSSLContext(String[] args) throws Exception{
