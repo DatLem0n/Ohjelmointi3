@@ -138,7 +138,7 @@ public class Message {
      * @return
      */
     private String unixToDate(Long unixTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX").withZone(ZoneId.of("UTC"));
         Instant instant = Instant.ofEpochMilli(unixTime);
         return formatter.format(instant);
     }

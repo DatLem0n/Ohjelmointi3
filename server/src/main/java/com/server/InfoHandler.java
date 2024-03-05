@@ -52,8 +52,16 @@ public class InfoHandler implements HttpHandler {
     private void handlePOST(HttpExchange exchange) throws  IOException{
         InputStream body = exchange.getRequestBody();
         String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-        JSONObject json = new JSONObject(bodyText);
-        body.close();
+        JSONObject json;
+        try {
+            json = new JSONObject(bodyText);
+        }catch (Throwable e){
+            e.printStackTrace();
+            Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "not JSON data");
+            return;
+        }finally {
+            body.close();
+        }
 
         int jsonLength = json.length();
         if (jsonLength != 6 && jsonLength != 8) {
@@ -77,8 +85,7 @@ public class InfoHandler implements HttpHandler {
                         json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
                         json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude));
 
-                System.out.println("success");
-                Server.sendResponse(exchange, HttpURLConnection.HTTP_OK, "success");
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
             }
 
         }catch (Throwable e){
@@ -94,7 +101,6 @@ public class InfoHandler implements HttpHandler {
      * @throws IOException
      */
     private void handleGET(HttpExchange exchange) throws  IOException{
-        System.out.println("handling GET");
         JSONArray jsonArray = new JSONArray();
         ArrayList<Message> messages = new ArrayList<>();
         try {
