@@ -6,6 +6,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 public class Message {
+    private Integer id;
     private String locationName;
     private String locationDescription;
     private String locationCity;
@@ -28,7 +29,8 @@ public class Message {
         setLongitude(longitude);
     }
 
-    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude){
+    Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude){
+        setId(id);
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -40,7 +42,13 @@ public class Message {
         setLongitude(longitude);
 
     }
+    public Integer getId() {
+        return id;
+    }
 
+    public void setId(Integer id) {
+        this.id = id;
+    }
     public String getLocationName() {
         return locationName;
     }
@@ -149,6 +157,7 @@ public class Message {
      */
     public JSONObject toJSONObject(){
         JSONObject json = new JSONObject();
+        json.put("locationID", id);
         json.put("locationName", locationName);
         json.put("locationDescription", locationDescription);
         json.put("locationCity", locationCity);

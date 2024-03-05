@@ -52,6 +52,7 @@ public class InfoHandler implements HttpHandler {
     private void handlePOST(HttpExchange exchange) throws  IOException{
         InputStream body = exchange.getRequestBody();
         String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+        body.close();
         JSONObject json;
         try {
             json = new JSONObject(bodyText);
@@ -59,8 +60,6 @@ public class InfoHandler implements HttpHandler {
             e.printStackTrace();
             Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "not JSON data");
             return;
-        }finally {
-            body.close();
         }
 
         int jsonLength = json.length();

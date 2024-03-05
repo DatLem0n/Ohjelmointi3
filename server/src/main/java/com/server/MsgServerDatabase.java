@@ -97,6 +97,16 @@ public class MsgServerDatabase {
                             constraint().primaryKey("id")
                     )
                     .execute();
+
+            jooq.createTableIfNotExists("tours")
+                    .column("id", SQLDataType.INTEGER.identity(true))
+                    .column("tourName", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("tourDescription", SQLDataType.VARCHAR(255).nullable(false))
+                    .column("locations", SQLDataType.VARCHAR(255).nullable(false))
+                    .constraints(
+                            constraint().primaryKey("id")
+                    )
+                    .execute();
             System.out.println("DB creation successful");
         }
     }
@@ -105,7 +115,7 @@ public class MsgServerDatabase {
      * adds message data to the database
      * @param message
      */
-    public void addMessage(Message message) throws DataAccessException, SQLException {
+    public void addMessage(Message message) throws DataAccessException {
         jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
                         field("latitude"), field("longitude"))
@@ -124,6 +134,12 @@ public class MsgServerDatabase {
 
         jooq.insertInto(table("users"), field("username"), field("password"),field("salt"),field("email"), field("userNickname"))
                 .values(user.getUsername(), hashedPassword,salt, user.getEmail(), user.getNickname())
+                .execute();
+    }
+
+    public void addTour(Tour tour) throws DataAccessException, SQLException{
+        jooq.insertInto(table("tours"),field("tourName"), field("tourDescription"), field("locations"))
+                .values(tour.getTourName(),tour.getTourDescription(),tour.locationIDsToString())
                 .execute();
     }
 
@@ -192,6 +208,25 @@ public class MsgServerDatabase {
         return null;
     }
 
+    public Message getMessageByID(Integer id) throws DataAccessException{
+        Record record = jooq.select()
+                .from(table("messages"))
+                .where(field("id").eq(id))
+                .fetchAny();
+        if (record != null) {
+            return messageFromRecord(record);
+        }
+        return null;
+    }
+
+    public boolean containsMessage(Integer id) throws DataAccessException{
+        Record record = jooq.select()
+                .from(table("messages"))
+                .where(field("id").eq(id))
+                .fetchAny();
+        return record != null;
+    }
+
     /**
      * returns all messages in database as an arraylist
      * @return
@@ -204,22 +239,57 @@ public class MsgServerDatabase {
                 .fetch();
 
         for (Record record: result){
-            String locationName = record.get(field("locationName", String.class));
-            String locationDescription = record.get("locationDescription", String.class);
-            String locationCity = record.get("locationCity", String.class);
-            String locationCountry = record.get("locationCountry", String.class);
-            String locationStreetAddress = record.get("locationStreetAddress", String.class);
-            Long unixTime = record.get("originalPostingTime", Long.class);
-            String nickname = record.get("originalPoster", String.class);
-            Double latitude = record.get("latitude", Double.class);
-            Double longitude = record.get("longitude", Double.class);
-
-
-            Message message = new Message(locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude);
-
-            messages.add(message);
+            messages.add(messageFromRecord(record));
         }
 
         return messages;
+    }
+
+    private Message messageFromRecord(Record record) throws IllegalArgumentException{
+        Integer id = record.get(field("id", Integer.class));
+        String locationName = record.get(field("locationName", String.class));
+        String locationDescription = record.get(field("locationDescription", String.class));
+        String locationCity = record.get(field("locationCity", String.class));
+        String locationCountry = record.get(field("locationCountry", String.class));
+        String locationStreetAddress = record.get(field("locationStreetAddress", String.class));
+        Long unixTime = record.get(field("originalPostingTime", Long.class));
+        String nickname = record.get(field("originalPoster", String.class));
+        Double latitude = record.get(field("latitude", Double.class));
+        Double longitude = record.get(field("longitude", Double.class));
+
+
+        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude);
+    }
+
+    public ArrayList<Tour> getTours(){
+        ArrayList<Tour> tours = new ArrayList<Tour>();
+
+        Result<Record> result = jooq.select()
+                .from(table("tours"))
+                .fetch();
+
+        for (Record record: result){
+            tours.add(tourFromRecord(record));
+        }
+        return tours;
+    }
+
+    private Tour tourFromRecord(Record record) throws IllegalArgumentException{
+        String tourName = record.get(field("tourName"), String.class);
+        String tourDescription = record.get(field("tourDescription", String.class));
+        String locationIDs = record.get(field("locations", String.class));
+        ArrayList<Integer> locations = locationsFromStr(locationIDs);
+
+        return new Tour(tourName, tourDescription, locations);
+    }
+
+    public ArrayList<Integer> locationsFromStr(String locationIDs){
+        String[] splitIDs = locationIDs.split(",");
+        ArrayList<Integer> locations = new ArrayList<>();
+
+        for (String splitID : splitIDs) {
+            locations.add(Integer.parseInt(splitID));
+        }
+        return locations;
     }
 }

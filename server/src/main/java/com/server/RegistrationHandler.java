@@ -47,9 +47,17 @@ public class RegistrationHandler implements HttpHandler {
             InputStream body = exchange.getRequestBody();
             String bodyText = new BufferedReader(new InputStreamReader(body, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
             body.close();
-            JSONObject json = new JSONObject(bodyText);
+
+            JSONObject json;
+            try {
+                json = new JSONObject(bodyText);
+            }catch (Throwable e){
+                e.printStackTrace();
+                Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "not JSON data");
+                return;
+            }
             if (json.length() != 4) {
-                Server.sendResponse(exchange, HttpURLConnection.HTTP_ENTITY_TOO_LARGE, "Incorrect JSON length");
+                Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
             }
             try{
                 if (!authenticator.addUser(json.getString("username"), json.getString("password"), json.getString("email"), json.getString("userNickname"))) {
