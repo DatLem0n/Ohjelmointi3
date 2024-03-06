@@ -16,8 +16,9 @@ public class Message {
     private String originalPostingTime;
     private Double latitude;
     private Double longitude;
+    private Double weather;
 
-    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, String originalPostingTime, String originalPoster, Double latitude, Double longitude){
+    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -27,9 +28,10 @@ public class Message {
         setOriginalPoster(originalPoster);
         setLatitude(latitude);
         setLongitude(longitude);
+        setWeather(weather);
     }
 
-    Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude){
+    Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude, Double weather){
         setId(id);
         setLocationName(locationName);
         setLocationCity(locationCity);
@@ -40,7 +42,7 @@ public class Message {
         setOriginalPoster(originalPoster);
         setLatitude(latitude);
         setLongitude(longitude);
-
+        setWeather(weather);
     }
     public Integer getId() {
         return id;
@@ -120,6 +122,14 @@ public class Message {
         this.longitude = longitude;
     }
 
+    public Double getWeather() {
+        return weather;
+    }
+
+    public void setWeather(Double weather) {
+        this.weather = weather;
+    }
+
     /**
      * gets posting time and formats it to unix and returns it
      * @return
@@ -169,6 +179,9 @@ public class Message {
         if (latitude != null){
             json.put("latitude", latitude);
             json.put("longitude", longitude);
+        }
+        if (weather != null){
+            json.put("weather", weather);
         }
         return json;
     }

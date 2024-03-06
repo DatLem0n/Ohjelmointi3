@@ -93,6 +93,7 @@ public class MsgServerDatabase {
                     .column("originalPoster", SQLDataType.VARCHAR(255).nullable(false))
                     .column("latitude",SQLDataType.DOUBLE.nullable(true))
                     .column("longitude",SQLDataType.DOUBLE.nullable(true))
+                    .column("weather",SQLDataType.DOUBLE.nullable(true))
                     .constraints(
                             constraint().primaryKey("id")
                     )
@@ -118,9 +119,9 @@ public class MsgServerDatabase {
     public void addMessage(Message message) throws DataAccessException {
         jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
-                        field("latitude"), field("longitude"))
+                        field("latitude"), field("longitude"), field("weather"))
                 .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.getLocationCountry(),
-                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude())
+                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather())
                 .execute();
     }
 
@@ -256,9 +257,9 @@ public class MsgServerDatabase {
         String nickname = record.get(field("originalPoster", String.class));
         Double latitude = record.get(field("latitude", Double.class));
         Double longitude = record.get(field("longitude", Double.class));
+        Double weather = record.get(field("weather", Double.class));
 
-
-        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude);
+        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude, weather);
     }
 
     public ArrayList<Tour> getTours(){
