@@ -34,6 +34,10 @@ public class Tour {
         this.tourDescription = tourDescription;
     }
 
+    /**
+     * creates a string from the locationID arraylist, separated by commas
+     * @return
+     */
     public String locationIDsToString() {
         StringBuilder str = new StringBuilder();
         for (Integer id : locationIDs) {

@@ -62,15 +62,17 @@ public class Server {
                 params.setSSLParameters(sslparams);
             }
         });
-
         UserAuthenticator authenticator = new UserAuthenticator("/info", database);
+
         HttpContext infoContext = server.createContext("/info", new InfoHandler(database));
         HttpContext topContext = server.createContext("/topfive", new TopFiveHandler(database));
         HttpContext registrationContext = server.createContext("/registration", new RegistrationHandler(authenticator, database));
         HttpContext pathsContext = server.createContext("/paths", new PathsHandler(database));
+
         infoContext.setAuthenticator(authenticator);
         pathsContext.setAuthenticator(authenticator);
         topContext.setAuthenticator(authenticator);
+
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
         } catch (FileNotFoundException e) {

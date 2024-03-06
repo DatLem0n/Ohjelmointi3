@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class PathsHandler implements HttpHandler {
 
-    MsgServerDatabase database;
+    private final MsgServerDatabase database;
 
     PathsHandler(MsgServerDatabase database){
         this.database = database;
@@ -59,20 +59,6 @@ public class PathsHandler implements HttpHandler {
 
     }
 
-    private ArrayList<Integer> jsonToLocationArray(JSONArray jsonLocations){
-        ArrayList<Integer> locations = new ArrayList<>();
-        for (int i = 0; i < jsonLocations.length(); i++){
-            JSONObject location = jsonLocations.getJSONObject(i);
-            Integer id = location.getInt("locationID");
-            if (!database.containsMessage(id)){
-                throw new NoSuchElementException("location with given ID does not exist");
-            }else {
-                locations.add(id);
-            }
-        }
-        return locations;
-    }
-
     private void handleGET(HttpExchange exchange) throws IOException {
         JSONArray jsonArray = new JSONArray();
         ArrayList<Tour> tours = new ArrayList<>();
@@ -101,6 +87,30 @@ public class PathsHandler implements HttpHandler {
 
     }
 
+    /**
+     * creates an ArrayList of id integers from a JSONArray of locationID:s
+     * @param jsonLocations
+     * @return
+     */
+    private ArrayList<Integer> jsonToLocationArray(JSONArray jsonLocations){
+        ArrayList<Integer> locations = new ArrayList<>();
+        for (int i = 0; i < jsonLocations.length(); i++){
+            JSONObject location = jsonLocations.getJSONObject(i);
+            Integer id = location.getInt("locationID");
+            if (!database.containsMessage(id)){
+                throw new NoSuchElementException("location with given ID does not exist");
+            }else {
+                locations.add(id);
+            }
+        }
+        return locations;
+    }
+
+    /**
+     * creates a JSONObject from a tour object
+     * @param tour
+     * @return
+     */
     private JSONObject tourToJSONObject(Tour tour){
         JSONObject json = new JSONObject();
         json.put("tour_name", tour.getTourName());

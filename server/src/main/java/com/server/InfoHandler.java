@@ -158,6 +158,12 @@ public class InfoHandler implements HttpHandler {
         return true;
     }
 
+    /**
+     * gets the weather information from a weather API on localhost:4001/weather.
+     * @param latitude
+     * @param longitude
+     * @return temperature value
+     */
     private Double getWeather(Double latitude, Double longitude) {
         HttpClient client = HttpClient.newHttpClient();
         JSONObject coordinates = new JSONObject();

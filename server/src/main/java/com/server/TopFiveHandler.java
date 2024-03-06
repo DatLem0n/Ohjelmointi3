@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class TopFiveHandler implements HttpHandler {
-    MsgServerDatabase database;
+    private final MsgServerDatabase database;
 
     TopFiveHandler(MsgServerDatabase database){
         this.database = database;

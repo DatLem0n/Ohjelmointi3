@@ -125,7 +125,7 @@ public class MsgServerDatabase {
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
                         field("latitude"), field("longitude"), field("weather"), field("timesVisited"))
                 .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.getLocationCountry(),
-                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather(), 1)
+                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather(), message.getTimesVisited())
                 .execute();
     }
 
@@ -142,6 +142,12 @@ public class MsgServerDatabase {
                 .execute();
     }
 
+    /**
+     * adds a tour into the database
+     * @param tour
+     * @throws DataAccessException
+     * @throws SQLException
+     */
     public void addTour(Tour tour) throws DataAccessException, SQLException{
         jooq.insertInto(table("tours"),field("tourName"), field("tourDescription"), field("locations"))
                 .values(tour.getTourName(),tour.getTourDescription(),tour.locationIDsToString())
@@ -213,6 +219,12 @@ public class MsgServerDatabase {
         return null;
     }
 
+    /**
+     * gets the message of given id
+     * @param id
+     * @return
+     * @throws DataAccessException
+     */
     public Message getMessageByID(Integer id) throws DataAccessException{
         Record record = jooq.select()
                 .from(table("messages"))
@@ -224,6 +236,12 @@ public class MsgServerDatabase {
         return null;
     }
 
+    /**
+     * checks if a message is found with given id
+     * @param id
+     * @return
+     * @throws DataAccessException
+     */
     public boolean containsMessage(Integer id) throws DataAccessException{
         Record record = jooq.select()
                 .from(table("messages"))
@@ -250,6 +268,12 @@ public class MsgServerDatabase {
         return messages;
     }
 
+    /**
+     * constructs a message from a record
+     * @param record
+     * @return
+     * @throws IllegalArgumentException
+     */
     private Message messageFromRecord(Record record) throws IllegalArgumentException{
         Integer id = record.get(field("id", Integer.class));
         String locationName = record.get(field("locationName", String.class));
@@ -267,6 +291,10 @@ public class MsgServerDatabase {
         return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude, weather, timesVisited);
     }
 
+    /**
+     * gets all tours currently stored in the database
+     * @return
+     */
     public ArrayList<Tour> getTours(){
         ArrayList<Tour> tours = new ArrayList<Tour>();
 
@@ -280,6 +308,12 @@ public class MsgServerDatabase {
         return tours;
     }
 
+    /**
+     * constructs a tour from a record
+     * @param record
+     * @return
+     * @throws IllegalArgumentException
+     */
     private Tour tourFromRecord(Record record) throws IllegalArgumentException{
         String tourName = record.get(field("tourName"), String.class);
         String tourDescription = record.get(field("tourDescription", String.class));
@@ -289,6 +323,11 @@ public class MsgServerDatabase {
         return new Tour(tourName, tourDescription, locations);
     }
 
+    /**
+     * parses a string with location ids into an arraylist of integers
+     * @param locationIDs
+     * @return
+     */
     public ArrayList<Integer> locationsFromStr(String locationIDs){
         String[] splitIDs = locationIDs.split(",");
         ArrayList<Integer> locations = new ArrayList<>();
@@ -299,6 +338,10 @@ public class MsgServerDatabase {
         return locations;
     }
 
+    /**
+     * adds one visit to a location with given id
+     * @param id
+     */
     public void visitLocation(Integer id){
         jooq.update(table("messages"))
                 .set(field("timesVisited", Integer.class), field("timesVisited", Integer.class).plus(1))
@@ -306,6 +349,11 @@ public class MsgServerDatabase {
                 .execute();
     }
 
+    /**
+     * gets information required for topFive visit info
+     * @param location
+     * @return
+     */
     private JSONObject getVisitInfo(Record location){
         JSONObject json = new JSONObject();
         json.put("locationID", location.get(field("id"), Integer.class));
@@ -314,6 +362,10 @@ public class MsgServerDatabase {
         return json;
     }
 
+    /**
+     * gets the top five locations and constructs a JSONArray with all necessary info for the /topfive realm
+     * @return
+     */
     public JSONArray getTopFive(){
         Result<Record> result = jooq.select()
                 .from(table("messages"))
