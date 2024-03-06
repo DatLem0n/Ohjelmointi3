@@ -16,6 +16,9 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.apache.commons.codec.digest.Crypt;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import static org.jooq.impl.DSL.*;
 
 public class MsgServerDatabase {
@@ -94,6 +97,7 @@ public class MsgServerDatabase {
                     .column("latitude",SQLDataType.DOUBLE.nullable(true))
                     .column("longitude",SQLDataType.DOUBLE.nullable(true))
                     .column("weather",SQLDataType.DOUBLE.nullable(true))
+                    .column("timesVisited", SQLDataType.INTEGER.nullable(false))
                     .constraints(
                             constraint().primaryKey("id")
                     )
@@ -119,9 +123,9 @@ public class MsgServerDatabase {
     public void addMessage(Message message) throws DataAccessException {
         jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
-                        field("latitude"), field("longitude"), field("weather"))
+                        field("latitude"), field("longitude"), field("weather"), field("timesVisited"))
                 .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.getLocationCountry(),
-                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather())
+                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather(), 1)
                 .execute();
     }
 
@@ -258,8 +262,9 @@ public class MsgServerDatabase {
         Double latitude = record.get(field("latitude", Double.class));
         Double longitude = record.get(field("longitude", Double.class));
         Double weather = record.get(field("weather", Double.class));
+        Integer timesVisited = record.get(field("timesVisited", Integer.class));
 
-        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude, weather);
+        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude, weather, timesVisited);
     }
 
     public ArrayList<Tour> getTours(){
@@ -292,5 +297,33 @@ public class MsgServerDatabase {
             locations.add(Integer.parseInt(splitID));
         }
         return locations;
+    }
+
+    public void visitLocation(Integer id){
+        jooq.update(table("messages"))
+                .set(field("timesVisited", Integer.class), field("timesVisited", Integer.class).plus(1))
+                .where(field("id").eq(id))
+                .execute();
+    }
+
+    private JSONObject getVisitInfo(Record location){
+        JSONObject json = new JSONObject();
+        json.put("locationID", location.get(field("id"), Integer.class));
+        json.put("locationName", location.get(field("locationName"), String.class));
+        json.put("timesVisited", location.get(field("timesVisited"), Integer.class));
+        return json;
+    }
+
+    public JSONArray getTopFive(){
+        Result<Record> result = jooq.select()
+                .from(table("messages"))
+                .orderBy(field("timesVisited").desc())
+                .limit(5)
+                .fetch();
+        JSONArray array = new JSONArray();
+        for (Record location : result){
+            array.put(getVisitInfo(location));
+        }
+        return array;
     }
 }

@@ -4,17 +4,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.jooq.exception.DataAccessException;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
 
 
-import javax.xml.crypto.dsig.XMLObject;
 import java.io.*;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -51,7 +47,6 @@ public class InfoHandler implements HttpHandler {
         } else {
             Server.sendResponse(exchange, HttpURLConnection.HTTP_NOT_IMPLEMENTED, "Not Supported");
         }
-
     }
 
     /**
@@ -73,7 +68,7 @@ public class InfoHandler implements HttpHandler {
         }
 
         int jsonLength = json.length();
-        if (jsonLength != 6 && jsonLength != 8 && jsonLength != 9) {
+        if (jsonLength != 2 && jsonLength != 6 && jsonLength != 8 && jsonLength != 9) {
             Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
         User sender;
@@ -83,23 +78,29 @@ public class InfoHandler implements HttpHandler {
 
         try {
             sender = database.getUser(exchange.getPrincipal().getUsername());
+            if (jsonLength == 2){
+                Integer locationID = json.getInt("locationID");
+                database.visitLocation(locationID);
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+                return;
+            }
             if (!validTimestamp(json.getString("originalPostingTime"))){
                 Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
+                return;
             }
-            else {
-                if (jsonLength >= 8) {
-                    latitude = json.getDouble("latitude");
-                    longitude = json.getDouble("longitude");
-                    if (json.has("weather")){
-                        weather = getWeather(latitude, longitude);
-                    }
+            if (jsonLength >= 8) {
+                latitude = json.getDouble("latitude");
+                longitude = json.getDouble("longitude");
+                if (json.has("weather")){
+                    weather = getWeather(latitude, longitude);
                 }
-                database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
-                        json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
-                        json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude, weather));
-
-                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
             }
+            database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
+                    json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
+                    json.getString("originalPostingTime"), sender.getNickname(), latitude, longitude, weather, 1));
+
+            exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+
 
         }catch (Throwable e){
             Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");

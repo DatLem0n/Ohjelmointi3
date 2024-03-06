@@ -17,8 +17,10 @@ public class Message {
     private Double latitude;
     private Double longitude;
     private Double weather;
+    private Integer timesVisited;
 
-    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather){
+    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress,
+            String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather, Integer timesVisited){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -29,9 +31,11 @@ public class Message {
         setLatitude(latitude);
         setLongitude(longitude);
         setWeather(weather);
+        setTimesVisited(timesVisited);
     }
 
-    Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress, Long unixTime, String originalPoster, Double latitude, Double longitude, Double weather){
+    Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress,
+            Long unixTime, String originalPoster, Double latitude, Double longitude, Double weather, Integer timesVisited){
         setId(id);
         setLocationName(locationName);
         setLocationCity(locationCity);
@@ -43,6 +47,7 @@ public class Message {
         setLatitude(latitude);
         setLongitude(longitude);
         setWeather(weather);
+        setTimesVisited(timesVisited);
     }
     public Integer getId() {
         return id;
@@ -130,6 +135,15 @@ public class Message {
         this.weather = weather;
     }
 
+    public Integer getTimesVisited() {
+        return timesVisited;
+    }
+
+    public void setTimesVisited(Integer timesVisited) {
+        this.timesVisited = timesVisited;
+    }
+
+
     /**
      * gets posting time and formats it to unix and returns it
      * @return
@@ -175,6 +189,7 @@ public class Message {
         json.put("locationStreetAddress", locationStreetAddress);
         json.put("originalPoster", originalPoster);
         json.put("originalPostingTime", originalPostingTime);
+        json.put("timesVisited", timesVisited);
 
         if (latitude != null){
             json.put("latitude", latitude);
