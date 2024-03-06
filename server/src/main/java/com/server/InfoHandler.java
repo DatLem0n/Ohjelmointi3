@@ -5,9 +5,22 @@ import com.sun.net.httpserver.HttpHandler;
 import org.jooq.exception.DataAccessException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.XML;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
@@ -63,7 +76,7 @@ public class InfoHandler implements HttpHandler {
         }
 
         int jsonLength = json.length();
-        if (jsonLength != 6 && jsonLength != 8) {
+        if (jsonLength != 6 && jsonLength != 8 && jsonLength != 9) {
             Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON length");
         }
         User sender;
@@ -76,9 +89,15 @@ public class InfoHandler implements HttpHandler {
                 Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
             }
             else {
-                if (jsonLength == 8) {
+                if (jsonLength >= 8) {
                     latitude = json.getDouble("latitude");
                     longitude = json.getDouble("longitude");
+                }
+                if (json.has("weather")){
+                    String weather = getWeather(latitude, longitude);
+                    if (weather == null){
+                        weather = "weather service could not be reached";
+                    }
                 }
                 database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
                         json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
@@ -141,5 +160,28 @@ public class InfoHandler implements HttpHandler {
             return false;
         }
         return true;
+    }
+
+    private String getWeather(Double latitude, Double longitude)throws IOException {
+        HttpClient client = HttpClient.newHttpClient();
+        JSONObject json = new JSONObject();
+        json.put("latitude", latitude);
+        json.put("longitude", longitude);
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("http://localhost:4001/weather"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            JSONObject responseJSON = XML.toJSONObject(response.body());
+            return responseJSON.getString("temperature");
+
+        }catch (URISyntaxException | InterruptedException e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }
