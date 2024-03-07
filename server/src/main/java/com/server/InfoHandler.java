@@ -78,22 +78,24 @@ public class InfoHandler implements HttpHandler {
 
         try {
             sender = database.getUser(exchange.getPrincipal().getUsername());
-            if (jsonLength == 2){
-                Integer locationID = json.getInt("locationID");
-                database.visitLocation(locationID);
-                exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
-                return;
+            switch (jsonLength){
+                case 2:
+                    Integer locationID = json.getInt("locationID");
+                    database.visitLocation(locationID);
+                    exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
+                    return;
+                case 8:
+                    latitude = json.getDouble("latitude");
+                    longitude = json.getDouble("longitude");
+                    break;
+                case 9:
+                    latitude = json.getDouble("latitude");
+                    longitude = json.getDouble("longitude");
+                    weather = getWeather(latitude, longitude);
             }
             if (!validTimestamp(json.getString("originalPostingTime"))){
                 Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect time format");
                 return;
-            }
-            if (jsonLength >= 8) {
-                latitude = json.getDouble("latitude");
-                longitude = json.getDouble("longitude");
-                if (json.has("weather")){
-                    weather = getWeather(latitude, longitude);
-                }
             }
             database.addMessage(new Message(json.getString("locationName"), json.getString("locationDescription"),
                     json.getString("locationCity"), json.getString("locationCountry"), json.getString("locationStreetAddress"),
@@ -101,8 +103,7 @@ public class InfoHandler implements HttpHandler {
 
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, -1);
 
-
-        }catch (Throwable e){
+        }catch (Exception e){
             Server.sendResponse(exchange, HttpURLConnection.HTTP_BAD_REQUEST, "Incorrect JSON data");
             e.printStackTrace();
         }
