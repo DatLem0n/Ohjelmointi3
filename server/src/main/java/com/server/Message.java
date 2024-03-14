@@ -18,9 +18,11 @@ public class Message {
     private Double longitude;
     private Double weather;
     private Integer timesVisited;
+    private Long timeModified;
+    private String updateReason;
 
     Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress,
-            String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather, Integer timesVisited){
+            String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather){
         setLocationName(locationName);
         setLocationCity(locationCity);
         setLocationCountry(locationCountry);
@@ -31,11 +33,29 @@ public class Message {
         setLatitude(latitude);
         setLongitude(longitude);
         setWeather(weather);
-        setTimesVisited(timesVisited);
+        setTimesVisited(1);
+        setTimeModified(null);
+        setUpdateReason(null);
+    }
+    Message(String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress,
+            String originalPostingTime, String originalPoster, Double latitude, Double longitude, Double weather, String updateReason){
+        setLocationName(locationName);
+        setLocationCity(locationCity);
+        setLocationCountry(locationCountry);
+        setLocationStreetAddress(locationStreetAddress);
+        setLocationDescription(locationDescription);
+        setOriginalPostingTime(originalPostingTime);
+        setOriginalPoster(originalPoster);
+        setLatitude(latitude);
+        setLongitude(longitude);
+        setWeather(weather);
+        setTimesVisited(1);
+        setTimeModified(System.currentTimeMillis());
+        setUpdateReason(updateReason);
     }
 
     Message(Integer id, String locationName, String locationDescription, String locationCity, String locationCountry, String locationStreetAddress,
-            Long unixTime, String originalPoster, Double latitude, Double longitude, Double weather, Integer timesVisited){
+            Long unixTime, String originalPoster, Double latitude, Double longitude, Double weather, Integer timesVisited, Long timeModified, String updateReason){
         setId(id);
         setLocationName(locationName);
         setLocationCity(locationCity);
@@ -48,6 +68,8 @@ public class Message {
         setLongitude(longitude);
         setWeather(weather);
         setTimesVisited(timesVisited);
+        setTimeModified(timeModified);
+        setUpdateReason(updateReason);
     }
     public Integer getId() {
         return id;
@@ -143,6 +165,25 @@ public class Message {
         this.timesVisited = timesVisited;
     }
 
+    public Long getTimeModified() {
+        return timeModified;
+    }
+
+    public void setTimeModified(Long timeModified) {
+        this.timeModified = timeModified;
+    }
+
+    public boolean isModified(){
+        return timeModified != null;
+    }
+    public String getUpdateReason() {
+        return updateReason;
+    }
+
+    public void setUpdateReason(String updateReason) {
+        this.updateReason = updateReason;
+    }
+
 
     /**
      * gets posting time and formats it to unix and returns it
@@ -197,6 +238,12 @@ public class Message {
         }
         if (weather != null){
             json.put("weather", weather);
+        }
+        if (isModified()){
+            if (updateReason != null){
+                json.put("updatereason", updateReason);
+            }
+            json.put("modified", unixToDate(timeModified));
         }
         return json;
     }

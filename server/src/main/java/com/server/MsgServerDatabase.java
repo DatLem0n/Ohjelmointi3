@@ -98,6 +98,8 @@ public class MsgServerDatabase {
                     .column("longitude",SQLDataType.DOUBLE.nullable(true))
                     .column("weather",SQLDataType.DOUBLE.nullable(true))
                     .column("timesVisited", SQLDataType.INTEGER.nullable(false))
+                    .column("timeModified", SQLDataType.BIGINT.nullable(true))
+                    .column("updateReason", SQLDataType.VARCHAR(255).nullable(true))
                     .constraints(
                             constraint().primaryKey("id")
                     )
@@ -123,9 +125,10 @@ public class MsgServerDatabase {
     public void addMessage(Message message) throws DataAccessException {
         jooq.insertInto(table("messages"), field("locationName"), field("locationDescription"),field("locationCity"),
                         field("locationCountry"), field("locationStreetAddress"), field("originalPoster"), field("originalPostingTime"),
-                        field("latitude"), field("longitude"), field("weather"), field("timesVisited"))
+                        field("latitude"), field("longitude"), field("weather"), field("timesVisited"), field("timeModified"), field("updateReason"))
                 .values(message.getLocationName(), message.getLocationDescription(), message.getLocationCity(), message.getLocationCountry(),
-                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(), message.getLongitude(), message.getWeather(), message.getTimesVisited())
+                        message.getLocationStreetAddress(), message.getOriginalPoster(), message.getUnixDate(), message.getLatitude(),
+                        message.getLongitude(), message.getWeather(), message.getTimesVisited(), message.getTimeModified(), message.getUpdateReason())
                 .execute();
     }
 
@@ -254,7 +257,7 @@ public class MsgServerDatabase {
      * returns all messages in database as an arraylist
      * @return
      */
-    public ArrayList<Message> getMessages() throws DataAccessException{
+    public synchronized ArrayList<Message> getMessages() throws DataAccessException{
         ArrayList<Message> messages = new ArrayList<Message>();
 
         Result<Record> result = jooq.select()
@@ -287,8 +290,12 @@ public class MsgServerDatabase {
         Double longitude = record.get(field("longitude", Double.class));
         Double weather = record.get(field("weather", Double.class));
         Integer timesVisited = record.get(field("timesVisited", Integer.class));
+        Long timeModified = record.get(field("timeModified", Long.class));
+        String updateReason = record.get(field("updateReason", String.class));
 
-        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress, unixTime, nickname, latitude, longitude, weather, timesVisited);
+
+        return new Message(id, locationName, locationDescription, locationCity, locationCountry, locationStreetAddress,
+                unixTime, nickname, latitude, longitude, weather, timesVisited, timeModified, updateReason);
     }
 
     /**
@@ -377,5 +384,28 @@ public class MsgServerDatabase {
             array.put(getVisitInfo(location));
         }
         return array;
+    }
+
+    /**
+     * Updates message information in the database
+     * @param id
+     * @param message
+     */
+    public void updateMessage(Integer id, Message message) {
+        jooq.update(table("messages"))
+                .set(field("locationName", String.class), message.getLocationName())
+                .set(field("locationDescription", String.class), message.getLocationDescription())
+                .set(field("locationCity", String.class), message.getLocationCity())
+                .set(field("locationCountry", String.class), message.getLocationCountry())
+                .set(field("locationStreetAddress", String.class), message.getLocationStreetAddress())
+                .set(field("originalPoster", String.class), message.getOriginalPoster())
+                .set(field("originalPostingTime", Long.class), message.getUnixDate())
+                .set(field("latitude", Double.class), message.getLatitude())
+                .set(field("longitude", Double.class), message.getLongitude())
+                .set(field("weather", Double.class), message.getWeather())
+                .set(field("timeModified", Long.class), System.currentTimeMillis())
+                .set(field("updateReason",String.class), message.getUpdateReason())
+                .where(field("id").eq(id))
+                .execute();
     }
 }
